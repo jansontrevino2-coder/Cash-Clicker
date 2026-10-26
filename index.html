@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Empire</title>
+
+  <style>
+    :root {
+      --background: #07140e;
+      --panel: rgba(15, 42, 28, 0.92);
+      --panel-light: rgba(25, 65, 43, 0.9);
+      --green: #51e889;
+      --green-dark: #22ad5c;
+      --yellow: #ffd866;
+      --text: #f6fff8;
+      --muted: #a8cab3;
+      --danger: #ff6876;
+      --border: rgba(107, 255, 156, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(54, 214, 111, 0.18), transparent 35%),
+        radial-gradient(circle at 100% 100%, rgba(255, 216, 102, 0.1), transparent 30%),
+        var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .game {
+      width: min(1200px, 100%);
+      margin: auto;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: rgba(8, 28, 18, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(15px);
+    }
+
+    .title-area h1 {
+      margin: 0;
+      color: var(--green);
+      font-size: clamp(1.8rem, 5vw, 3rem);
+    }
+
+    .title-area p {
+      margin: 7px 0 0;
+      color: var(--muted);
+    }
+
+    .money-display {
+      text-align: right;
+    }
+
+    .money-display .money {
+      color: var(--yellow);
+      font-size: clamp(1.7rem, 5vw, 2.7rem);
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .money-display .income {
+      color: var(--green);
+      margin-top: 5px;
+      font-weight: 700;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.9fr) minmax(350px, 1.3fr);
+      gap: 20px;
+    }
+
+    .panel {
+      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(15px);
+    }
+
+    .panel h2 {
+      margin: 0 0 16px;
+      font-size: 1.35rem;
+    }
+
+    .clicker-panel {
+      display: flex;
+      min-height: 550px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .clicker-panel::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      background: rgba(65, 232, 132, 0.12);
+      border-radius: 50%;
+      filter: blur(25px);
+      pointer-events: none;
+    }
+
+    .bill-button {
+      position: relative;
+      z-index: 1;
+      width: min(310px, 90%);
+      min-height: 155px;
+      border: 7px solid #d5f5dc;
+      border-radius: 18px;
+      color: #093d1d;
+      background:
+        radial-gradient(circle, #c8f2d3 0 13%, transparent 14%),
+        linear-gradient(135deg, #68df91, #bdeecb);
+      box-shadow:
+        0 15px 0 #17743d,
+        0 26px 40px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .bill-button:hover {
+      filter: brightness(1.07);
+    }
+
+    .bill-button:active,
+    .bill-button.clicked {
+      transform: translateY(11px) scale(0.98);
+      box-shadow:
+        0 4px 0 #17743d,
+        0 12px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .bill-symbol {
+      display: block;
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .bill-text {
+      display: block;
+      margin-top: 8px;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+    }
+
+    .click-value {
+      position: relative;
+      z-index: 1;
+      margin-top: 32px;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .click-value strong {
+      color: var(--yellow);
+    }
+
+    .stats {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 27px;
+    }
+
+    .stat {
+      padding: 13px;
+      background: rgba(1, 12, 7, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      margin-top: 5px;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 5px;
+      background: rgba(3, 18, 10, 0.55);
+      border-radius: 15px;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 11px 8px;
+      border: none;
+      border-radius: 11px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      color: #062314;
+      background: var(--green);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .shop-list {
+      display: grid;
+      gap: 11px;
+      max-height: 580px;
+      padding-right: 3px;
+      overflow-y: auto;
+    }
+
+    .shop-item {
+      display: grid;
+      grid-template-columns: 58px 1fr auto;
+      align-items: center;
+      gap: 13px;
+      padding: 14px;
+      background: var(--panel-light);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+    }
+
+    .shop-icon {
+      display: grid;
+      width: 58px;
+      height: 58px;
+      place-items: center;
+      background: rgba(4, 23, 13, 0.55);
+      border-radius: 15px;
+      font-size: 2rem;
+    }
+
+    .shop-info h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+    }
+
+    .shop-info p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .owned {
+      display: inline-block;
+      margin-top: 5px;
+      color: var(--yellow);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .buy-button {
+      min-width: 110px;
+      padding: 12px 10px;
+      border: none;
+      border-radius: 13px;
+      color: #082614;
+      background: var(--green);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.12s, opacity 0.12s;
+    }
+
+    .buy-button:hover:not(:disabled) {
+      transform: scale(1.04);
+    }
+
+    .buy-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+
+    .achievement {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      background: var(--panel-light);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      opacity: 0.48;
+    }
+
+    .achievement.unlocked {
+      opacity: 1;
+      border-color: rgba(255, 216, 102, 0.45);
+      background: rgba(91, 76, 24, 0.35);
+    }
+
+    .achievement-icon {
+      font-size: 1.7rem;
+    }
+
+    .achievement h3 {
+      margin: 0 0 4px;
+      font-size: 0.95rem;
+    }
+
+    .achievement p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .bottom-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .action-button {
+      padding: 12px 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      background: rgba(23, 63, 40, 0.8);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .action-button.danger {
+      color: #fff;
+      border-color: rgba(255, 104, 118, 0.35);
+      background: rgba(150, 38, 51, 0.72);
+    }
+
+    .save-status {
+      align-self: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .floating-money {
+      position: fixed;
+      z-index: 100;
+      color: var(--yellow);
+      font-size: 1.3rem;
+      font-weight: 900;
+      pointer-events: none;
+      animation: floatUp 0.9s ease-out forwards;
+      text-shadow: 0 2px 7px #000;
+    }
+
+    .notification {
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      z-index: 200;
+      width: min(420px, calc(100% - 30px));
+      padding: 16px 20px;
+      border: 1px solid rgba(91, 255, 146, 0.35);
+      border-radius: 15px;
+      color: var(--text);
+      background: #123d26;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
+      font-weight: 800;
+      text-align: center;
+      transform: translate(-50%, -150%);
+      transition: transform 0.35s;
+    }
+
+    .notification.show {
+      transform: translate(-50%, 0);
+    }
+
+    .offline-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+    }
+
+    .offline-modal.show {
+      display: grid;
+    }
+
+    .modal-card {
+      width: min(450px, 100%);
+      padding: 30px;
+      border: 1px solid var(--border);
+      border-radius: 25px;
+      background: #123523;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .modal-card .modal-icon {
+      font-size: 3.5rem;
+    }
+
+    .modal-card h2 {
+      margin: 12px 0 8px;
+    }
+
+    .modal-card p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .offline-amount {
+      margin: 20px 0;
+      color: var(--yellow);
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .collect-button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      color: #062314;
+      background: var(--green);
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(0.8);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -90px) scale(1.2);
+      }
+    }
+
+    @media (max-width: 800px) {
+      .game {
+        padding: 13px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .money-display {
+        text-align: left;
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .clicker-panel {
+        min-height: 470px;
+      }
+
+      .shop-item {
+        grid-template-columns: 50px 1fr;
+      }
+
+      .shop-icon {
+        width: 50px;
+        height: 50px;
+      }
+
+      .buy-button {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .bottom-actions {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="notification" id="notification"></div>
+
+  <div class="offline-modal" id="offlineModal">
+    <div class="modal-card">
+      <div class="modal-icon">🌙</div>
+      <h2>Welcome Back!</h2>
+      <p id="offlineMessage">Your businesses kept working while you were away.</p>
+      <div class="offline-amount" id="offlineAmount">$0</div>
+      <button class="collect-button" id="collectOffline">Collect Money</button>
+    </div>
+  </div>
+
+  <main class="game">
+    <header class="topbar">
+      <div class="title-area">
+        <h1>💵 Money Empire</h1>
+        <p>Click, invest, upgrade, and build your empire.</p>
+      </div>
+
+      <div class="money-display">
+        <div class="money" id="moneyDisplay">$0</div>
+        <div class="income" id="incomeDisplay">$0 per second</div>
+      </div>
+    </header>
+
+    <section class="main-grid">
+      <div class="panel clicker-panel">
+        <button class="bill-button" id="billButton" aria-label="Click the dollar bill">
+          <span class="bill-symbol">$</span>
+          <span class="bill-text">CLICK FOR MONEY</span>
+        </button>
+
+        <div class="click-value">
+          Each click earns <strong id="clickValue">$1</strong>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Total Earned</div>
+            <div class="stat-value" id="totalEarned">$0</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">Total Clicks</div>
+            <div class="stat-value" id="totalClicks">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">Businesses</div>
+            <div class="stat-value" id="totalBusinesses">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">Click Level</div>
+            <div class="stat-value" id="clickLevel">1</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="tabs">
+          <button class="tab-button active" data-tab="businesses">Businesses</button>
+          <button class="tab-button" data-tab="upgrades">Upgrades</button>
+          <button class="tab-button" data-tab="achievements">Awards</button>
+        </div>
+
+        <div class="tab-content active" id="businesses">
+          <div class="shop-list" id="businessList"></div>
+        </div>
+
+        <div class="tab-content" id="upgrades">
+          <div class="shop-list" id="upgradeList"></div>
+        </div>
+
+        <div class="tab-content" id="achievements">
+          <div class="shop-list" id="achievementList"></div>
+        </div>
+
+        <div class="bottom-actions">
+          <button class="action-button" id="saveButton">Save Game</button>
+          <span class="save-status" id="saveStatus">Autosave enabled</span>
+          <button class="action-button danger" id="resetButton">Reset</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const SAVE_KEY = "moneyEmpireSaveV1";
+    const OFFLINE_LIMIT_HOURS = 24;
+
+    const businessData = [
+      {
+        id: "lemonade",
+        name: "Lemonade Stand",
+        icon: "🍋",
+        baseCost: 25,
+        income: 1,
+        description: "A small start to your business empire."
+      },
+      {
+        id: "carWash",
+        name: "Car Wash",
+        icon: "🚗",
+        baseCost: 150,
+        income: 6,
+        description: "Keep the neighborhood cars shining."
+      },
+      {
+        id: "foodTruck",
+        name: "Food Truck",
+        icon: "🚚",
+        baseCost: 800,
+        income: 25,
+        description: "Serve food and collect steady profits."
+      },
+      {
+        id: "store",
+        name: "Retail Store",
+        icon: "🏪",
+        baseCost: 4500,
+        income: 120,
+        description: "Sell products to customers all day."
+      },
+      {
+        id: "factory",
+        name: "Factory",
+        icon: "🏭",
+        baseCost: 25000,
+        income: 600,
+        description: "Mass-produce products for serious cash."
+      },
+      {
+        id: "bank",
+        name: "Bank",
+        icon: "🏦",
+        baseCost: 150000,
+        income: 3200,
+        description: "Make money by managing more money."
+      },
+      {
+        id: "techCompany",
+        name: "Tech Company",
+        icon: "💻",
+        baseCost: 900000,
+        income: 18000,
+        description: "Build apps, software, and digital products."
+      },
+      {
+        id: "spaceCompany",
+        name: "Space Company",
+        icon: "🚀",
+        baseCost: 6000000,
+        income: 110000,
+        description: "Take your business empire beyond Earth."
+      }
+    ];
+
+    const upgradeData = [
+      {
+        level: 1,
+        name: "Faster Fingers",
+        icon: "👆",
+        cost: 50,
+        clickValue: 2,
+        description: "Earn $2 with every click."
+      },
+      {
+        level: 2,
+        name: "Money Magnet",
+        icon: "🧲",
+        cost: 300,
+        clickValue: 5,
+        description: "Earn $5 with every click."
+      },
+      {
+        level: 3,
+        name: "Golden Mouse",
+        icon: "🖱️",
+        cost: 2000,
+        clickValue: 15,
+        description: "Earn $15 with every click."
+      },
+      {
+        level: 4,
+        name: "Diamond Click",
+        icon: "💎",
+        cost: 15000,
+        clickValue: 75,
+        description: "Earn $75 with every click."
+      },
+      {
+        level: 5,
+        name: "Super Clicker",
+        icon: "⚡",
+        cost: 100000,
+        clickValue: 400,
+        description: "Earn $400 with every click."
+      },
+      {
+        level: 6,
+        name: "Money Machine",
+        icon: "🤑",
+        cost: 1000000,
+        clickValue: 5000,
+        description: "Earn $5,000 with every click."
+      },
+      {
+        level: 7,
+        name: "Reality Breaker",
+        icon: "🌌",
+        cost: 25000000,
+        clickValue: 100000,
+        description: "Earn $100,000 with every click."
+      }
+    ];
+
+    const achievementData = [
+      {
+        id: "firstClick",
+        name: "First Dollar",
+        icon: "🪙",
+        description: "Click the dollar bill once.",
+        check: () => game.totalClicks >= 1
+      },
+      {
+        id: "hundredClicks",
+        name: "Dedicated Clicker",
+        icon: "👆",
+        description: "Click the dollar bill 100 times.",
+        check: () => game.totalClicks >= 100
+      },
+      {
+        id: "firstBusiness",
+        name: "Entrepreneur",
+        icon: "💼",
+        description: "Buy your first business.",
+        check: () => getTotalBusinesses() >= 1
+      },
+      {
+        id: "tenBusinesses",
+        name: "Growing Empire",
+        icon: "🏙️",
+        description: "Own 10 businesses.",
+        check: () => getTotalBusinesses() >= 10
+      },
+      {
+        id: "thousand",
+        name: "Four Figures",
+        icon: "💵",
+        description: "Earn $1,000 in total.",
+        check: () => game.totalEarned >= 1000
+      },
+      {
+        id: "millionaire",
+        name: "Millionaire",
+        icon: "👑",
+        description: "Earn $1,000,000 in total.",
+        check: () => game.totalEarned >= 1000000
+      },
+      {
+        id: "incomeKing",
+        name: "Income King",
+        icon: "📈",
+        description: "Reach $10,000 per second.",
+        check: () => getIncomePerSecond() >= 10000
+      }
+    ];
+
+    function createDefaultGame() {
+      const businesses = {};
+      businessData.forEach(business => {
+        businesses[business.id] = 0;
+      });
+
+      return {
+        money: 0,
+        totalEarned: 0,
+        totalClicks: 0,
+        clickLevel: 0,
+        businesses,
+        achievements: [],
+        lastSaved: Date.now()
+      };
+    }
+
+    let game = createDefaultGame();
+    let pendingOfflineMoney = 0;
+
+    const moneyDisplay = document.getElementById("moneyDisplay");
+    const incomeDisplay = document.getElementById("incomeDisplay");
+    const clickValueDisplay = document.getElementById("clickValue");
+    const totalEarnedDisplay = document.getElementById("totalEarned");
+    const totalClicksDisplay = document.getElementById("totalClicks");
+    const totalBusinessesDisplay = document.getElementById("totalBusinesses");
+    const clickLevelDisplay = document.getElementById("clickLevel");
+    const businessList = document.getElementById("businessList");
+    const upgradeList = document.getElementById("upgradeList");
+    const achievementList = document.getElementById("achievementList");
+    const billButton = document.getElementById("billButton");
+    const notification = document.getElementById("notification");
+    const offlineModal = document.getElementById("offlineModal");
+    const offlineMessage = document.getElementById("offlineMessage");
+    const offlineAmount = document.getElementById("offlineAmount");
+    const saveStatus = document.getElementById("saveStatus");
+
+    function formatMoney(value) {
+      if (!Number.isFinite(value)) {
+        return "$0";
+      }
+
+      const absolute = Math.abs(value);
+      const suffixes = [
+        { value: 1e15, suffix: "Q" },
+        { value: 1e12, suffix: "T" },
+        { value: 1e9, suffix: "B" },
+        { value: 1e6, suffix: "M" },
+        { value: 1e3, suffix: "K" }
+      ];
+
+      for (const item of suffixes) {
+        if (absolute >= item.value) {
+          const shortened = value / item.value;
+          const decimals = shortened >= 100 ? 0 : shortened >= 10 ? 1 : 2;
+          return "$" + shortened.toFixed(decimals).replace(/\.0+$|(\.\d*[1-9])0+$/, "$1") + item.suffix;
+        }
+      }
+
+      return "$" + Math.floor(value).toLocaleString();
+    }
+
+    function formatDuration(milliseconds) {
+      const totalSeconds = Math.floor(milliseconds / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+
+      if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+      }
+
+      return `${seconds}s`;
+    }
+
+    function getClickValue() {
+      if (game.clickLevel <= 0) {
+        return 1;
+      }
+
+      const upgrade = upgradeData[game.clickLevel - 1];
+      return upgrade ? upgrade.clickValue : 1;
+    }
+
+    function getBusinessCost(business) {
+      const owned = game.businesses[business.id] || 0;
+      return Math.floor(business.baseCost * Math.pow(1.15, owned));
+    }
+
+    function getBusinessIncome(business) {
+      return business.income * (game.businesses[business.id] || 0);
+    }
+
+    function getIncomePerSecond() {
+      return businessData.reduce((total, business) => {
+        return total + getBusinessIncome(business);
+      }, 0);
+    }
+
+    function getTotalBusinesses() {
+      return Object.values(game.businesses).reduce((total, amount) => {
+        return total + Number(amount || 0);
+      }, 0);
+    }
+
+    function addMoney(amount) {
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return;
+      }
+
+      game.money += amount;
+      game.totalEarned += amount;
+    }
+
+    function renderBusinesses() {
+      businessList.innerHTML = "";
+
+      businessData.forEach(business => {
+        const cost = getBusinessCost(business);
+        const owned = game.businesses[business.id] || 0;
+        const item = document.createElement("div");
+        item.className = "shop-item";
+
+        item.innerHTML = `
+          <div class="shop-icon">${business.icon}</div>
+          <div class="shop-info">
+            <h3>${business.name}</h3>
+            <p>${business.description}</p>
+            <span class="owned">
+              Owned: ${owned} · Producing ${formatMoney(getBusinessIncome(business))}/sec
+            </span>
+          </div>
+          <button class="buy-button" ${game.money < cost ? "disabled" : ""}>
+            Buy<br>${formatMoney(cost)}
+          </button>
+        `;
+
+        item.querySelector(".buy-button").addEventListener("click", () => {
+          buyBusiness(business.id);
+        });
+
+        businessList.appendChild(item);
+      });
+    }
+
+    function renderUpgrades() {
+      upgradeList.innerHTML = "";
+
+      upgradeData.forEach((upgrade, index) => {
+        const purchased = game.clickLevel > index;
+        const isNext = game.clickLevel === index;
+        const item = document.createElement("div");
+        item.className = "shop-item";
+
+        let buttonText = "Locked";
+        let disabled = true;
+
+        if (purchased) {
+          buttonText = "Purchased";
+        } else if (isNext) {
+          buttonText = `Buy<br>${formatMoney(upgrade.cost)}`;
+          disabled = game.money < upgrade.cost;
+        }
+
+        item.innerHTML = `
+          <div class="shop-icon">${upgrade.icon}</div>
+          <div class="shop-info">
+            <h3>${upgrade.name}</h3>
+            <p>${upgrade.description}</p>
+            <span class="owned">Click upgrade level ${upgrade.level}</span>
+          </div>
+          <button class="buy-button" ${disabled || purchased ? "disabled" : ""}>
+            ${buttonText}
+          </button>
+        `;
+
+        if (isNext && !purchased) {
+          item.querySelector(".buy-button").addEventListener("click", () => {
+            buyClickUpgrade(index);
+          });
+        }
+
+        upgradeList.appendChild(item);
+      });
+
+      if (game.clickLevel >= upgradeData.length) {
+        const completed = document.createElement("div");
+        completed.className = "achievement unlocked";
+        completed.innerHTML = `
+          <div class="achievement-icon">🏆</div>
+          <div>
+            <h3>All click upgrades purchased!</h3>
+            <p>Your clicking power is fully upgraded.</p>
+          </div>
+        `;
+        upgradeList.appendChild(completed);
+      }
+    }
+
+    function renderAchievements() {
+      achievementList.innerHTML = "";
+
+      achievementData.forEach(achievement => {
+        const unlocked = game.achievements.includes(achievement.id);
+        const item = document.createElement("div");
+        item.className = `achievement ${unlocked ? "unlocked" : ""}`;
+
+        item.innerHTML = `
+          <div class="achievement-icon">${unlocked ? achievement.icon : "🔒"}</div>
+          <div>
+            <h3>${achievement.name}</h3>
+            <p>${achievement.description}</p>
+          </div>
+        `;
+
+        achievementList.appendChild(item);
+      });
+    }
+
+    function render() {
+      const clickValue = getClickValue();
+      const income = getIncomePerSecond();
+
+      moneyDisplay.textContent = formatMoney(game.money);
+      incomeDisplay.textContent = `${formatMoney(income)} per second`;
+      clickValueDisplay.textContent = formatMoney(clickValue);
+      totalEarnedDisplay.textContent = formatMoney(game.totalEarned);
+      totalClicksDisplay.textContent = game.totalClicks.toLocaleString();
+      totalBusinessesDisplay.textContent = getTotalBusinesses().toLocaleString();
+      clickLevelDisplay.textContent = (game.clickLevel + 1).toLocaleString();
+
+      renderBusinesses();
+      renderUpgrades();
+      renderAchievements();
+    }
+
+    function buyBusiness(id) {
+      const business = businessData.find(item => item.id === id);
+
+      if (!business) {
+        return;
+      }
+
+      const cost = getBusinessCost(business);
+
+      if (game.money < cost) {
+        showNotification("You do not have enough money!");
+        return;
+      }
+
+      game.money -= cost;
+      game.businesses[id] = (game.businesses[id] || 0) + 1;
+
+      showNotification(`${business.icon} Bought ${business.name}!`);
+      checkAchievements();
+      render();
+      saveGame(false);
+    }
+
+    function buyClickUpgrade(index) {
+      const upgrade = upgradeData[index];
+
+      if (!upgrade || index !== game.clickLevel) {
+        return;
+      }
+
+      if (game.money < upgrade.cost) {
+        showNotification("You do not have enough money!");
+        return;
+      }
+
+      game.money -= upgrade.cost;
+      game.clickLevel++;
+
+      showNotification(`${upgrade.icon} ${upgrade.name} purchased!`);
+      checkAchievements();
+      render();
+      saveGame(false);
+    }
+
+    function clickDollar(event) {
+      const amount = getClickValue();
+
+      addMoney(amount);
+      game.totalClicks++;
+
+      billButton.classList.add("clicked");
+      setTimeout(() => billButton.classList.remove("clicked"), 90);
+
+      createFloatingMoney(event, amount);
+      checkAchievements();
+      render();
+    }
+
+    function createFloatingMoney(event, amount) {
+      const floating = document.createElement("div");
+      floating.className = "floating-money";
+      floating.textContent = `+${formatMoney(amount)}`;
+
+      const rect = billButton.getBoundingClientRect();
+      const x = event.clientX || rect.left + rect.width / 2;
+      const y = event.clientY || rect.top + rect.height / 2;
+
+      floating.style.left = `${x}px`;
+      floating.style.top = `${y}px`;
+
+      document.body.appendChild(floating);
+
+      setTimeout(() => {
+        floating.remove();
+      }, 900);
+    }
+
+    function checkAchievements() {
+      let unlockedSomething = false;
+
+      achievementData.forEach(achievement => {
+        if (
+          !game.achievements.includes(achievement.id) &&
+          achievement.check()
+        ) {
+          game.achievements.push(achievement.id);
+          showNotification(`🏆 Achievement unlocked: ${achievement.name}`);
+          unlockedSomething = true;
+        }
+      });
+
+      if (unlockedSomething) {
+        renderAchievements();
+      }
+    }
+
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.classList.add("show");
+
+      clearTimeout(showNotification.timeout);
+
+      showNotification.timeout = setTimeout(() => {
+        notification.classList.remove("show");
+      }, 2300);
+    }
+
+    function saveGame(showMessage = true) {
+      game.lastSaved = Date.now();
+
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+
+        const now = new Date();
+        saveStatus.textContent = `Saved at ${now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        })}`;
+
+        if (showMessage) {
+          showNotification("Game saved!");
+        }
+      } catch (error) {
+        saveStatus.textContent = "Unable to save";
+        showNotification("Your browser blocked the save.");
+      }
+    }
+
+    function loadGame() {
+      let savedGame;
+
+      try {
+        savedGame = JSON.parse(localStorage.getItem(SAVE_KEY));
+      } catch (error) {
+        savedGame = null;
+      }
+
+      if (!savedGame || typeof savedGame !== "object") {
+        render();
+        return;
+      }
+
+      const defaults = createDefaultGame();
+
+      game = {
+        ...defaults,
+        ...savedGame,
+        money: Number(savedGame.money) || 0,
+        totalEarned: Number(savedGame.totalEarned) || 0,
+        totalClicks: Number(savedGame.totalClicks) || 0,
+        clickLevel: Math.max(
+          0,
+          Math.min(Number(savedGame.clickLevel) || 0, upgradeData.length)
+        ),
+        businesses: {
+          ...defaults.businesses,
+          ...(savedGame.businesses || {})
+        },
+        achievements: Array.isArray(savedGame.achievements)
+          ? savedGame.achievements
+          : [],
+        lastSaved: Number(savedGame.lastSaved) || Date.now()
+      };
+
+      calculateOfflineEarnings();
+      checkAchievements();
+      render();
+    }
+
+    function calculateOfflineEarnings() {
+      const now = Date.now();
+      const elapsed = Math.max(0, now - game.lastSaved);
+      const maximumOfflineTime = OFFLINE_LIMIT_HOURS * 60 * 60 * 1000;
+      const countedTime = Math.min(elapsed, maximumOfflineTime);
+      const income = getIncomePerSecond();
+
+      pendingOfflineMoney = income * (countedTime / 1000);
+
+      if (pendingOfflineMoney >= 1 && countedTime >= 5000) {
+        offlineMessage.textContent =
+          `Your businesses worked for ${formatDuration(countedTime)} while you were away.`;
+
+        offlineAmount.textContent = formatMoney(pendingOfflineMoney);
+        offlineModal.classList.add("show");
+      } else {
+        pendingOfflineMoney = 0;
+        game.lastSaved = now;
+      }
+    }
+
+    function collectOfflineMoney() {
+      if (pendingOfflineMoney > 0) {
+        addMoney(pendingOfflineMoney);
+      }
+
+      pendingOfflineMoney = 0;
+      game.lastSaved = Date.now();
+      offlineModal.classList.remove("show");
+
+      checkAchievements();
+      render();
+      saveGame(false);
+    }
+
+    function resetGame() {
+      const accepted = confirm(
+        "Are you sure you want to reset your entire Money Empire? This cannot be undone."
+      );
+
+      if (!accepted) {
+        return;
+      }
+
+      localStorage.removeItem(SAVE_KEY);
+      game = createDefaultGame();
+      pendingOfflineMoney = 0;
+      offlineModal.classList.remove("show");
+
+      render();
+      saveGame(false);
+      showNotification("Your game has been reset.");
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-button").forEach(button => {
+        button.classList.toggle(
+          "active",
+          button.dataset.tab === tabName
+        );
+      });
+
+      document.querySelectorAll(".tab-content").forEach(content => {
+        content.classList.toggle(
+          "active",
+          content.id === tabName
+        );
+      });
+    }
+
+    billButton.addEventListener("click", clickDollar);
+
+    document.getElementById("saveButton").addEventListener("click", () => {
+      saveGame(true);
+    });
+
+    document.getElementById("resetButton").addEventListener("click", resetGame);
+    document.getElementById("collectOffline").addEventListener("click", collectOfflineMoney);
+
+    document.querySelectorAll(".tab-button").forEach(button => {
+      button.addEventListener("click", () => {
+        switchTab(button.dataset.tab);
+      });
+    });
+
+    setInterval(() => {
+      const income = getIncomePerSecond();
+
+      if (income > 0) {
+        addMoney(income / 10);
+        checkAchievements();
+        render();
+      }
+    }, 100);
+
+    setInterval(() => {
+      saveGame(false);
+    }, 10000);
+
+    window.addEventListener("beforeunload", () => {
+      saveGame(false);
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        saveGame(false);
+      }
+    });
+
+    loadGame();
+  </script>
+</body>
+</html>
